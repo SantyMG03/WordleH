@@ -1,4 +1,4 @@
-module Main where
+module Principal where
 
 import Ansi
 import Wordle
