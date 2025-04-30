@@ -14,17 +14,10 @@ letters :: [Char]
 letters = "abcdefghijklmnopqrstuvwxyz"
 
 -- Verifica si una palabra es válida (usa solo letras permitidas y tiene la longitud correcta)
--- all funciona con una funcion que devuelve T/F y una lista de elementos -> devuelve true si
---      todos lo elementos cumplen con la condicion
--- elem funciona con un elemento a buscar y un lista, devuelve T si el elemnto esta, F en otro caso
--- Para cada letra de word comprueba que este en letters
 validLetters :: String -> Bool
 validLetters word = all (`elem` letters) word 
 
 -- Genera un nuevo intento comparando con la palabra secreta
--- zip ([a],[b]) devuelve tuplas (a,b)
--- map recibe una funcion y una lista sobre la que aplicar la funcion
--- newTry forma tuplas de (guess, Clue) donde guess es cada una de las letras de la palabra intento
 newTry :: String -> String -> Try
 newTry guess secret = zip guess clues
   where
@@ -51,31 +44,25 @@ countLetters = foldr (\c m -> M.insertWith (+) c 1 m) M.empty
 initialLS :: Try
 initialLS = []
 
+-- Helper function to determine the priority of a clue
+cluePriority :: Clue -> Int
+cluePriority C = 3 -- Posicion correcta
+cluePriority I = 2 -- Posicion incorrecta pero esta en la palabra
+cluePriority N = 1 -- No esta en la palabra
+cluePriority U = 0 -- Desconocido
+
 -- Actualiza la información de los intentos previos con uno nuevo
--- foldr recibe una funcion, un acumulador y la lista a reducir, devolviendo la lista reducida
--- lookup comprueba si ch ya esta en acc, si ch ya era C -> no lo cambia, si no lo reemplaza 
---      con una nueva pista
--- filter aplica una funcion a una lista, en este caso: toma el primer elmento de la tupla (char, Clue)
---      con fst y verifica que dicha letra sea diferente de ch. Eliminara cualquier aparicion previa de 
---      ch en acc
 updateLS :: Try -> Try -> Try
-updateLS old new = foldr update old (bestClues new)
+updateLS oldLS newTry = M.toList $ M.unionWith chooseBest combinedMap initialMap
   where
-    update (ch, clue) acc =
-      case lookup ch acc of
-        Nothing   -> (ch, clue) : acc
-        Just prev -> (ch, maxClue clue prev) : filter ((/= ch) . fst) acc
-
--- Agrupa todas las pistas nuevas y se queda con la mejor para cada letra
-bestClues :: Try -> Try
-bestClues try = map best $ groupBy ((==) `on` fst) $ sortOn fst try
-  where
-    best group@((ch, _):_) = (ch, foldr1 maxClue (map snd group))
-    best [] = error "Grupo vacío inesperado"
-
-maxClue :: Clue -> Clue -> Clue
-maxClue C _ = C
-maxClue _ C = C
-maxClue I _ = I
-maxClue _ I = I
-maxClue N N = N
+    -- Initial state with all letters as Unknown
+    initialMap = M.fromList $ zip letters (repeat U)
+    -- Combine old and new tries
+    combinedPairs = oldLS ++ newTry
+    -- Create map from combined tries, resolving duplicates with best clue
+    combinedMap = M.fromListWith chooseBest combinedPairs
+    -- Function to choose the best clue based on priority
+    chooseBest :: Clue -> Clue -> Clue
+    chooseBest c1 c2 = if cluePriority c1 >= cluePriority c2 then c1 else c2
+    -- M.unionWith merges the two maps, using chooseBest when a key exists in both.
+    -- This ensures the initial 'U' is overridden by a more informative clue.

@@ -1,4 +1,4 @@
-module Main where
+module TestTLP2025Estudiantes where
 
 import Wordle
 

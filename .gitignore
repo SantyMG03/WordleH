@@ -1,0 +1,5 @@
+# Ignorar archivos de objeto
+*.o
+
+*.hi
+
