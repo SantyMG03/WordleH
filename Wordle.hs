@@ -44,7 +44,7 @@ countLetters = foldr (\c m -> M.insertWith (+) c 1 m) M.empty
 initialLS :: Try
 initialLS = []
 
--- Helper function to determine the priority of a clue
+-- Funcion auxiliar para obtener la prioridad correcta (Falla Ord)
 cluePriority :: Clue -> Int
 cluePriority C = 3 -- Posicion correcta
 cluePriority I = 2 -- Posicion incorrecta pero esta en la palabra
@@ -55,14 +55,14 @@ cluePriority U = 0 -- Desconocido
 updateLS :: Try -> Try -> Try
 updateLS oldLS newTry = M.toList $ M.unionWith chooseBest combinedMap initialMap
   where
-    -- Initial state with all letters as Unknown
+    -- Estado inicial, todas las letras marcadas como desconocidas
     initialMap = M.fromList $ zip letters (repeat U)
-    -- Combine old and new tries
+    -- Combina todos los intentos, previos y el actual
     combinedPairs = oldLS ++ newTry
-    -- Create map from combined tries, resolving duplicates with best clue
+    -- Crea un mapa combinando intentos, resolviendo duplicados con la mejor pista
     combinedMap = M.fromListWith chooseBest combinedPairs
-    -- Function to choose the best clue based on priority
+    -- Funcion para elegir la mejor pista basada en la prioridad
     chooseBest :: Clue -> Clue -> Clue
     chooseBest c1 c2 = if cluePriority c1 >= cluePriority c2 then c1 else c2
-    -- M.unionWith merges the two maps, using chooseBest when a key exists in both.
-    -- This ensures the initial 'U' is overridden by a more informative clue.
+    -- M.unionWith combina los dos mapas, usando chooseBest cuando una clave existe en ambos.
+    -- Se asegura de que la pista inicial 'U' sea reemplazada por una pista más informativa.
